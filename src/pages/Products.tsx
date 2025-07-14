@@ -4,15 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ProductCard from "@/components/ProductCard";
-import { sampleProducts, categories } from "@/data/products";
+import { categories } from "@/data/products";
 import { createWhatsAppLink } from "@/utils/whatsapp";
+import { useProductStorage } from "@/hooks/useProductStorage";
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua Kategori");
   const [sortBy, setSortBy] = useState("name");
+  
+  // Use the custom hook for product storage
+  const { products } = useProductStorage();
 
-  const filteredProducts = sampleProducts
+  const filteredProducts = products
     .filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           product.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -99,7 +103,7 @@ const Products = () => {
         {/* Results Info */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-muted-foreground">
-            Menampilkan {filteredProducts.length} dari {sampleProducts.length} produk
+            Menampilkan {filteredProducts.length} dari {products.length} produk
           </p>
           {(searchTerm || selectedCategory !== "Semua Kategori") && (
             <Button

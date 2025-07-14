@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,18 +7,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { sampleProducts, categories } from "@/data/products";
+import { categories } from "@/data/products";
 import { useToast } from "@/hooks/use-toast";
+import { useProductStorage } from "@/hooks/useProductStorage";
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [products, setProducts] = useState(sampleProducts);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+  
+  // Use the custom hook for product storage
+  const { 
+    products, 
+    addProduct, 
+    updateProduct, 
+    deleteProduct, 
+    resetToSampleData 
+  } = useProductStorage();
 
   // Simple authentication (in real app, use proper auth)
   const handleLogin = (e: React.FormEvent) => {
@@ -49,33 +58,57 @@ const Admin = () => {
   };
 
   const handleSaveProduct = (productData: any) => {
-    if (editingProduct) {
-      // Update existing product
-      setProducts(products.map(p => p.id === editingProduct.id ? { ...productData, id: editingProduct.id } : p));
+    try {
+      if (editingProduct) {
+        // Update existing product
+        updateProduct(editingProduct.id, productData);
+        toast({
+          title: "Produk berhasil diupdate",
+          description: `${productData.name} telah diperbarui`,
+        });
+      } else {
+        // Add new product
+        addProduct(productData);
+        toast({
+          title: "Produk berhasil ditambahkan",
+          description: `${productData.name} telah ditambahkan`,
+        });
+      }
+      setEditingProduct(null);
+      setIsDialogOpen(false);
+    } catch (error) {
       toast({
-        title: "Produk berhasil diupdate",
-        description: `${productData.name} telah diperbarui`,
-      });
-    } else {
-      // Add new product
-      const newProduct = { ...productData, id: Date.now() };
-      setProducts([...products, newProduct]);
-      toast({
-        title: "Produk berhasil ditambahkan",
-        description: `${productData.name} telah ditambahkan`,
+        title: "Error",
+        description: "Terjadi kesalahan saat menyimpan produk",
+        variant: "destructive",
       });
     }
-    setEditingProduct(null);
-    setIsDialogOpen(false);
   };
 
   const handleDeleteProduct = (id: number) => {
     if (confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
-      setProducts(products.filter(p => p.id !== id));
+      try {
+        deleteProduct(id);
+        toast({
+          title: "Produk berhasil dihapus",
+          description: "Produk telah dihapus dari database",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Terjadi kesalahan saat menghapus produk",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleResetData = () => {
+    if (confirm("Apakah Anda yakin ingin mereset semua data ke data awal?")) {
+      resetToSampleData();
       toast({
-        title: "Produk berhasil dihapus",
-        description: "Produk telah dihapus dari database",
-        variant: "destructive",
+        title: "Data berhasil direset",
+        description: "Semua data telah dikembalikan ke data sample",
       });
     }
   };
@@ -205,25 +238,35 @@ const Admin = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Daftar Produk</CardTitle>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="bg-gradient-wood hover:opacity-90"
-                    onClick={() => {
-                      setEditingProduct(null);
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Tambah Produk
-                  </Button>
-                </DialogTrigger>
-                <ProductDialog
-                  product={editingProduct}
-                  onSave={handleSaveProduct}
-                  onClose={() => setIsDialogOpen(false)}
-                />
-              </Dialog>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={handleResetData}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset Data
+                </Button>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="bg-gradient-wood hover:opacity-90"
+                      onClick={() => {
+                        setEditingProduct(null);
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Tambah Produk
+                    </Button>
+                  </DialogTrigger>
+                  <ProductDialog
+                    product={editingProduct}
+                    onSave={handleSaveProduct}
+                    onClose={() => setIsDialogOpen(false)}
+                  />
+                </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>

@@ -3,12 +3,14 @@ import { ArrowRight, Star, Shield, Truck, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ProductCard from "@/components/ProductCard";
-import { sampleProducts } from "@/data/products";
 import { createWhatsAppLink } from "@/utils/whatsapp";
+import { useProductStorage } from "@/hooks/useProductStorage";
 import heroBg from "@/assets/hero-wood-bg.jpg";
 
 const Home = () => {
-  const featuredProducts = sampleProducts.slice(0, 3);
+  // Use the custom hook for product storage
+  const { products } = useProductStorage();
+  const featuredProducts = products.slice(0, 3);
 
   const features = [
     {
